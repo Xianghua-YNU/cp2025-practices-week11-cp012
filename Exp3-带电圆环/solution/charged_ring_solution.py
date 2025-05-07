@@ -15,6 +15,8 @@ CHARGE = 1e-9          # 总电荷量(C)
 COULOMB_CONST = 8.988e9  # 库仑常数(N·m²/C²)
 NUM_INTEGRATION_POINTS = 1000  # 数值积分采样点数
 
+import numpy as np
+
 def calculate_potential_on_grid(y_coords, z_coords):
     """
     计算带电圆环在Y-Z平面上的电势分布
@@ -34,27 +36,32 @@ def calculate_potential_on_grid(y_coords, z_coords):
     # 初始化电势矩阵
     V = np.zeros_like(y_grid)
     
-    print("开始电势计算...")
+    print("开始计算电势...")
     
-    # 数值积分参数设置
-    theta = np.linspace(0, 2*np.pi, NUM_INTEGRATION_POINTS)
-    d_theta = 2*np.pi / NUM_INTEGRATION_POINTS
-    linear_charge_density = CHARGE / (2*np.pi*RING_RADIUS)  # 线电荷密度
+    # 圆环参数
+    radius = 1.0      # 圆环半径(m)
+    charge = 1e-9     # 总电荷量(C)
+    k = 8.988e9       # 库仑常数(N·m²/C²)
+    
+    # 数值积分参数
+    num_points = 1000
+    theta = np.linspace(0, 2*np.pi, num_points)
+    dq = charge / num_points  # 每个点电荷的电荷量
     
     for angle in theta:
         # 圆环上的点坐标(Y-Z平面)
-        y_ring = RING_RADIUS * np.cos(angle)
-        z_ring = RING_RADIUS * np.sin(angle)
+        y_ring = radius * np.cos(angle)
+        z_ring = radius * np.sin(angle)
         
-        # 计算距离并避免除以零
+        # 计算距离
         r = np.sqrt((y_grid - y_ring)**2 + (z_grid - z_ring)**2)
-        r[r < 1e-10] = np.inf  # 处理可能出现的奇点
+        r[r < 1e-10] = np.inf  # 处理奇点
         
-        # 累加电势贡献
-        V += COULOMB_CONST * linear_charge_density * RING_RADIUS * d_theta / r
+        # 累加电势
+        V += k * dq / r
     
     print("电势计算完成.")
-    return V, y_grid, z_grid
+    return V, y_grid, z_grid  # 确保返回三个值
 
 def calculate_electric_field(V, y_grid, z_grid):
     """
@@ -81,7 +88,6 @@ def calculate_electric_field(V, y_grid, z_grid):
     Ez /= dz
     
     return Ey, Ez
-
 def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
     """
     可视化电势和电场分布
