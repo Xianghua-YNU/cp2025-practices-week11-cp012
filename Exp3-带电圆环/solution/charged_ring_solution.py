@@ -1,13 +1,4 @@
-"""
-带电圆环电势与电场计算及可视化程序
-功能：
-1. 计算带电圆环在Y-Z平面上的电势分布
-2. 通过电势梯度计算电场强度分布
-3. 可视化等势线和电场线分布
-"""
-
 import numpy as np
-import matplotlib.pyplot as plt
 
 def calculate_potential_on_grid(y_coords, z_coords):
     """
@@ -80,62 +71,3 @@ def calculate_electric_field(V, y_grid, z_grid):
     Ez /= dz
     
     return Ey, Ez
-def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
-    """
-    可视化电势和电场分布
-    
-    参数:
-        y_coords, z_coords: 坐标范围
-        V: 电势矩阵
-        Ey, Ez: 电场分量
-        y_grid, z_grid: 计算网格
-    """
-    print("开始绘制结果...")
-    plt.figure('带电圆环电势与电场分布', figsize=(14, 6))
-    
-    # 1. 等势线图
-    plt.subplot(1, 2, 1)
-    levels = np.linspace(V.min(), V.max(), 30)
-    contour = plt.contourf(y_grid/RING_RADIUS, z_grid/RING_RADIUS, V, 
-                          levels=levels, cmap='viridis')
-    plt.colorbar(contour, label='电势 (V)')
-    plt.xlabel('y/a (a=圆环半径)')
-    plt.ylabel('z/a')
-    plt.title('等势线分布')
-    plt.gca().set_aspect('equal')
-    plt.grid(True, linestyle=':', alpha=0.5)
-    
-    # 2. 电场线图
-    plt.subplot(1, 2, 2)
-    E_magnitude = np.sqrt(Ey**2 + Ez**2)
-    plt.streamplot(y_grid/RING_RADIUS, z_grid/RING_RADIUS, Ey, Ez,
-                  color=E_magnitude, cmap='autumn',
-                  linewidth=1, density=2, arrowstyle='->')
-    plt.colorbar(label='电场强度 (V/m)')
-    plt.xlabel('y/a')
-    plt.ylabel('z/a')
-    plt.title('电场线分布')
-    plt.scatter([-1, 1], [0, 0], c='red', label='圆环截面')
-    plt.legend()
-    plt.gca().set_aspect('equal')
-    plt.grid(True, linestyle=':', alpha=0.5)
-    
-    plt.tight_layout()
-    plt.show()
-    print("绘图完成.")
-
-if __name__ == "__main__":
-    # 参数设置
-    GRID_POINTS = 40       # 每个方向的网格点数
-    PLOT_RANGE = 2.5       # 绘图范围为半径的倍数
-    
-    # 创建计算网格
-    y = np.linspace(-PLOT_RANGE*RING_RADIUS, PLOT_RANGE*RING_RADIUS, GRID_POINTS)
-    z = np.linspace(-PLOT_RANGE*RING_RADIUS, PLOT_RANGE*RING_RADIUS, GRID_POINTS)
-    
-    # 计算电势和电场
-    potential, y_mesh, z_mesh = calculate_potential_on_grid(y, z)
-    E_y, E_z = calculate_electric_field(potential, y_mesh, z_mesh)
-    
-    # 可视化结果
-    plot_potential_and_field(y, z, potential, E_y, E_z, y_mesh, z_mesh)
