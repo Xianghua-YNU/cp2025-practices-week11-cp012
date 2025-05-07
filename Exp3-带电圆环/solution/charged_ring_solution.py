@@ -74,6 +74,7 @@ def calculate_electric_field_on_grid(V, y_coords, z_coords):
     Ez = -grad_z
 
     return Ey, Ez
+
 # --- 可视化函数 ---
 def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
     """
