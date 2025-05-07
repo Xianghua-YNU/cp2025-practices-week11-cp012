@@ -29,8 +29,6 @@ def calculate_potential_on_grid(y_coords, z_coords):
                                         0:2*np.pi:100j]
     
     # 2. 计算场点到圆环上各点的距离 R
-    # 圆环上的点: (a*cos(phi), a*sin(phi), 0)
-    # 场点: (0, y, z)
     R = np.sqrt((a * np.cos(phi_grid))**2 + (y_grid - a * np.sin(phi_grid))**2 + z_grid**2)
     
     # 3. 处理 R 可能为零或非常小的情况，避免除零错误
@@ -40,7 +38,6 @@ def calculate_potential_on_grid(y_coords, z_coords):
     dV = C / R
     
     # 5. 对 phi 进行积分 (使用 np.trapz)
-    # np.trapz 默认沿最后一个轴积分
     V = np.trapz(dV, dx=phi_grid[0,0,1]-phi_grid[0,0,0], axis=-1)
     
     print("电势计算完成.")
@@ -68,8 +65,6 @@ def calculate_electric_field_on_grid(V, y_coords, z_coords):
     dy = y_coords[1] - y_coords[0]
     
     # 2. 使用 np.gradient 计算电势的负梯度
-    # 注意 V 的维度顺序是 (z, y)
-    # gradient 返回值顺序与 V 的维度顺序一致: (dV/dz, dV/dy)
     grad_z, grad_y = np.gradient(-V, dz, dy)
     
     # E = -∇V，所以 Ey = -dV/dy, Ez = -dV/dz
@@ -99,7 +94,6 @@ def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
     plt.subplot(1, 2, 1)
     contourf_plot = plt.contourf(y_grid/a, z_grid/a, V, levels=30, cmap='viridis')
     plt.colorbar(contourf_plot, label='Electric Potential V')
-    # plt.contour(y_grid, z_grid, V, levels=contourf_plot.levels, colors='white', linewidths=0.5)
     plt.xlabel('y / a')
     plt.ylabel('z / a')
     plt.title('Equipotential Contours')
@@ -133,7 +127,6 @@ def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
 # --- 主程序 ---
 if __name__ == "__main__":
     # 定义计算区域 (yz 平面, x=0)
-    # 范围可以以圆环半径 a 为单位
     num_points_y = 40  # y 方向点数
     num_points_z = 40  # z 方向点数
     range_factor = 2   # 计算范围是半径的多少倍
