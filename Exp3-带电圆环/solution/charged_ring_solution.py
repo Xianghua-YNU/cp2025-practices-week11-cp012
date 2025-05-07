@@ -42,7 +42,7 @@ def calculate_potential_on_grid(y_coords, z_coords):
     
     print("电势计算完成.")
     # 6. 返回计算得到的电势 V 和对应的 y_grid, z_grid (取一个切片)
-    return V, y_grid[:,:,0], z_grid[:,:,0]
+    return V, y_grid[:, :, 0], z_grid[:, :, 0]
 
 def calculate_electric_field_on_grid(V, y_coords, z_coords):
     """
