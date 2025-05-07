@@ -99,6 +99,7 @@ def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
     plt.subplot(1, 2, 1)
     contourf_plot = plt.contourf(y_grid/a, z_grid/a, V, levels=30, cmap='viridis')
     plt.colorbar(contourf_plot, label='Electric Potential V')
+    # plt.contour(y_grid, z_grid, V, levels=contourf_plot.levels, colors='white', linewidths=0.5)
     plt.xlabel('y / a')
     plt.ylabel('z / a')
     plt.title('Equipotential Contours')
