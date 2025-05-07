@@ -9,14 +9,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 全局常数定义
-RING_RADIUS = 1.0      # 圆环半径(m)
-CHARGE = 1e-9          # 总电荷量(C)
-COULOMB_CONST = 8.988e9  # 库仑常数(N·m²/C²)
-NUM_INTEGRATION_POINTS = 1000  # 数值积分采样点数
-
-import numpy as np
-
 def calculate_potential_on_grid(y_coords, z_coords):
     """
     计算带电圆环在Y-Z平面上的电势分布
