@@ -21,13 +21,15 @@ def calculate_potential_on_grid(y_coords, z_coords):
 
     返回:
         V (np.ndarray): 在 (y, z) 网格上的电势值
+        y_grid (np.ndarray): 二维 y 网格坐标
+        z_grid (np.ndarray): 二维 z 网格坐标
     """
-    # 创建 y, z, phi 网格
+ #    创建 y, z, phi 网格
     # 注意：mgrid 的索引顺序是 'ij' (笛卡尔) 还是 'xy' (矩阵)
     # 这里 z 是第一个维度，y 是第二个维度
     z_grid, y_grid, phi_grid = np.mgrid[z_coords.min():z_coords.max():complex(0, len(z_coords)),
                                         y_coords.min():y_coords.max():complex(0, len(y_coords)),
-                                        0:2*np.pi:100j] # phi 方向积分点数增加到100
+                                        0:2*np.pi:100j]  # phi 方向积分点数增加到100
 
     # 计算到圆环上各点的距离 R
     # 圆环在 xy 平面，方程 x=a*cos(phi), y=a*sin(phi), z=0
@@ -37,7 +39,7 @@ def calculate_potential_on_grid(y_coords, z_coords):
     R = np.sqrt((a * np.cos(phi_grid))**2 + (y_grid - a * np.sin(phi_grid))**2 + z_grid**2)
 
     # 处理 R=0 的情况（虽然在 yz 平面且 z!=0 或 y!=a 时不会发生）
-    R[R < 1e-10] = 1e-10 # 避免除零错误
+    R[R < 1e-10] = 1e-10  # 避免除零错误
 
     # 计算电势微元 dV
     dV = C / R
@@ -45,7 +47,7 @@ def calculate_potential_on_grid(y_coords, z_coords):
     # 对 phi 进行积分 (使用梯形法则)
     # np.trapezoid 默认沿最后一个轴积分
     V = np.trapezoid(dV, dx=phi_grid[0,0,1]-phi_grid[0,0,0], axis=-1)
-    return V, y_grid[:,:,0], z_grid[:,:,0] # 返回 V 和对应的 y, z 网格
+    return V, y_grid[:,:,0], z_grid[:,:,0]  # 返回 V 和对应的 y, z 网格
 
 def calculate_electric_field_on_grid(V, y_coords, z_coords):
     """
@@ -87,20 +89,19 @@ def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
     """
     fig = plt.figure('Potential and Electric Field of Charged Ring (yz plane, x=0)', figsize=(12, 6))
 
-
     # 1. 绘制等势线 (填充图)
     plt.subplot(1, 2, 1)
     # 使用 contourf 绘制填充等势线图
     # levels = np.linspace(V.min(), V.max(), 15) # 自动或手动设置等势线级别
     contourf_plot = plt.contourf(y_grid, z_grid, V, levels=20, cmap='viridis')
-    plt.colorbar(contourf_plot, label='Potential V (units: q/(2πε₀))') # 修改标签为英文
+    plt.colorbar(contourf_plot, label='Potential V (units: q/(2πε₀))')  # 修改标签为英文
     # 使用 contour 绘制等势线线条
     contour_plot = plt.contour(y_grid, z_grid, V, levels=contourf_plot.levels, colors='white', linewidths=0.5)
     # plt.clabel(contour_plot, inline=True, fontsize=8) # 在等势线上标示数值
     plt.xlabel('y / a')
     plt.ylabel('z / a')
-    plt.title('Equipotential Lines (yz plane)') # 修改标题为英文
-    plt.gca().set_aspect('equal', adjustable='box') # 保持纵横比为1
+    plt.title('Equipotential Lines (yz plane)')  # 修改标题为英文
+    plt.gca().set_aspect('equal', adjustable='box')  # 保持纵横比为1
     plt.grid(True, linestyle='--', alpha=0.5)
 
     # 2. 绘制电场线 (流线图)
@@ -117,22 +118,23 @@ def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
                                  arrowsize=1.0)
     plt.xlabel('y / a')
     plt.ylabel('z / a')
-    plt.title('Electric Field Lines (yz plane)') # 修改标题为英文
+    plt.title('Electric Field Lines (yz plane)')  # 修改标题为英文
     plt.gca().set_aspect('equal', adjustable='box')
     plt.grid(True, linestyle='--', alpha=0.5)
     # 标记圆环在 yz 平面的截面位置 (y=±a, z=0)
-    plt.plot([-1, 1], [0, 0], 'ro', markersize=5, label='Ring Cross-section') # 修改标签为英文
+    plt.plot([-1, 1], [0, 0], 'ro', markersize=5, label='Ring Cross-section')  # 修改标签为英文
     plt.legend()
 
-    plt.tight_layout() # 调整子图布局
+    plt.tight_layout()  # 调整子图布局
     plt.show()
 
 # --- 主程序 ---
+
 if __name__ == "__main__":
     # 定义计算区域 (yz 平面, x=0)
     # 范围以圆环半径 a 为单位
-    y_range = np.linspace(-2*a, 2*a, 40) # y 方向点数
-    z_range = np.linspace(-2*a, 2*a, 40) # z 方向点数
+    y_range = np.linspace(-2*a, 2*a, 40)  # y 方向点数
+    z_range = np.linspace(-2*a, 2*a, 40)  # z 方向点数
 
     # 1. 计算电势
     print("正在计算电势...")
