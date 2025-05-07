@@ -9,6 +9,22 @@ q = 1.0  # q 参数 (对应电荷 Q = 4*pi*eps0*q)
 C = q / (2 * np.pi)
 
 # --- 计算函数 ---
+def test_potential_calculation():
+    """测试电势计算函数"""
+    y_coords = np.linspace(-2, 2, 5)
+    z_coords = np.linspace(-2, 2, 5)
+    result = calculate_potential_on_grid(y_coords, z_coords)
+    assert result is not None, "函数返回值为None，请检查返回值！"
+    V, y_grid, z_grid = result
+    # 后续断言...
+def calculate_potential_on_grid(y_coords, z_coords):
+    # 生成网格坐标
+    y_grid, z_grid = np.meshgrid(y_coords, z_coords)
+    
+    # 计算电势（此处为示例逻辑，需替换为实际计算）
+    V = compute_potential(y_grid, z_grid)  # 替换为实际电势计算函数
+    
+    return V, y_grid, z_grid  # 确保返回三个变量
 
 def calculate_potential_on_grid(y_coords, z_coords):
     """
@@ -46,7 +62,16 @@ def calculate_potential_on_grid(y_coords, z_coords):
     # np.trapezoid 默认沿最后一个轴积分
     V = np.trapezoid(dV, dx=phi_grid[0,0,1]-phi_grid[0,0,0], axis=-1)
     return V, y_grid[:,:,0], z_grid[:,:,0] # 返回 V 和对应的 y, z 网格
-
+    
+def calculate_potential_on_grid(y_coords, z_coords):
+    try:
+        y_grid, z_grid = np.meshgrid(y_coords, z_coords)
+        V = compute_potential(y_grid, z_grid)
+        return V, y_grid, z_grid
+    except Exception as e:
+        print(f"计算电势时发生错误: {e}")
+        raise  # 重新抛出异常以便测试捕获
+        
 def calculate_electric_field_on_grid(V, y_coords, z_coords):
     """
     根据电势 V 计算 yz 平面上的电场 E = -∇V。
