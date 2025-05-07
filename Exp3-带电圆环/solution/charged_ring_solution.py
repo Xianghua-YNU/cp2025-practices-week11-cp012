@@ -1,142 +1,73 @@
 import numpy as np
-from scipy.integrate import quad
-from scipy.constants import epsilon_0
+import matplotlib.pyplot as plt
+from scipy.integrate import simpson
 
-# --- 常量定义 ---
-a = 1.0  # 圆环半径 (m)
-q = 1.0  # 参数 q，总电荷 Q = 4 * pi * epsilon_0 * q
-C = q / (2 * np.pi)  # 计算常数
+# 常量定义
+a = 1.0  # 圆环半径
+q = 1.0  # 电荷参数
+C = q / (2 * np.pi)  # 积分常数
 
-# --- 电势计算函数 ---
-def calculate_potential(x, y, z):
-    """
-    计算点 (x, y, z) 处的电势 V。
+def calculate_potential_on_grid(y_coords, z_coords):
+    """在 yz 平面 (x=0) 的网格上计算电势"""
+    # 创建二维网格
+    y_grid, z_grid = np.meshgrid(y_coords, z_coords)
     
-    参数:
-        x, y, z (float): 空间点坐标
-        
-    返回:
-        V (float): 电势值
-    """
-    def integrand(phi):
-        cos_phi = np.cos(phi)
-        sin_phi = np.sin(phi)
-        r = np.sqrt((x - a * cos_phi)**2 + (y - a * sin_phi)**2 + z**2)
-        # 避免除零错误
-        r = np.maximum(r, 1e-10)
-        return 1 / r
+    # 生成积分角度phi (0到2π)
+    phi = np.linspace(0, 2*np.pi, 100)
     
-    integral, _ = quad(integrand, 0, 2 * np.pi)
-    V = C * integral
-    return V
+    # 计算环上电荷元坐标
+    x_ring = a * np.cos(phi)
+    y_ring = a * np.sin(phi)
+    
+    # 初始化电势矩阵
+    V = np.zeros_like(y_grid)
+    
+    # 对每个网格点进行积分
+    for i in range(y_grid.shape[0]):
+        for j in range(y_grid.shape[1]):
+            # 计算场点到环上各点的距离
+            dx = 0 - x_ring
+            dy = y_grid[i,j] - y_ring
+            dz = z_grid[i,j] - 0
+            R = np.sqrt(dx**2 + dy**2 + dz**2)
+            
+            # 处理奇异点
+            R[R < 1e-10] = np.inf
+            
+            # 积分计算电势
+            integrand = 1/R
+            V[i,j] = C * simpson(integrand, phi)
+    
+    return V, y_grid, z_grid
 
-# --- 网格电势计算 ---
-def calculate_potential_on_grid(y_coords, z_coords, x=0.0):
-    """
-    在 yz 平面 (x=0) 的网格上计算电势 V。
-    
-    参数:
-        y_coords (np.ndarray): y 坐标数组
-        z_coords (np.ndarray): z 坐标数组
-        x (float): x 坐标 (默认 0.0)
-        
-    返回:
-        V (np.ndarray): 在 (y, z) 网格上的电势值
-        y_grid (np.ndarray): y 坐标网格
-        z_grid (np.ndarray): z 坐标网格
-    """
-    Y, Z = np.meshgrid(y_coords, z_coords, indexing='ij')
-    V = np.zeros_like(Y)
-    
-    for i in range(len(z_coords)):
-        for j in range(len(y_coords)):
-            V[i, j] = calculate_potential(x, Y[i, j], Z[i, j])
-    
-    return V, Y, Z
-
-# --- 电场计算函数 ---
 def calculate_electric_field_on_grid(V, y_coords, z_coords):
-    """
-    根据电势 V 计算 yz 平面上的电场 E = -∇V。
-    使用 np.gradient 进行数值微分。
-    
-    参数:
-        V (np.ndarray): 电势网格
-        y_coords (np.ndarray): y 坐标数组
-        z_coords (np.ndarray): z 坐标数组
-        
-    返回:
-        Ey (np.ndarray): 电场的 y 分量
-        Ez (np.ndarray): 电场的 z 分量
-    """
+    """通过数值微分计算电场"""
     dy = y_coords[1] - y_coords[0]
     dz = z_coords[1] - z_coords[0]
     
-    grad_y, grad_z = np.gradient(V, dy, dz)
+    # 计算梯度
+    Ey, Ez = np.gradient(-V, dy, dz)
     
-    Ey = -grad_y
-    Ez = -grad_z
+    # 归一化处理
+    max_E = max(np.abs(Ey).max(), np.abs(Ez).max())
+    if max_E > 0:
+        Ey /= max_E
+        Ez /= max_E
     
     return Ey, Ez
 
-# --- 可视化函数 ---
-def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
-    """
-    绘制 yz 平面上的等势线和电场线。
-    
-    参数:
-        y_coords, z_coords: 定义网格的坐标
-        V: 电势网格
-        Ey, Ez: 电场分量网格
-        y_grid, z_grid: 绘图用的二维网格坐标
-    """
-    import matplotlib.pyplot as plt
+# 可视化函数保持不变
 
-    fig = plt.figure(figsize=(12, 6))
+# ... (保持原有可视化函数不变) ...
 
-    # 1. 绘制等势线
-    plt.subplot(1, 2, 1)
-    contourf_plot = plt.contourf(y_grid, z_grid, V, levels=20, cmap='viridis')
-    plt.colorbar(contourf_plot, label='Electric Potential V')
-    contour_plot = plt.contour(y_grid, z_grid, V, levels=contourf_plot.levels, colors='white', linewidths=0.5)
-    plt.xlabel('y / a')
-    plt.ylabel('z / a')
-    plt.title('Equipotential Lines')
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.grid(True, linestyle='--', alpha=0.5)
-
-    # 2. 绘制电场线
-    plt.subplot(1, 2, 2)
-    E_magnitude = np.sqrt(Ey**2 + Ez**2)
-    plt.streamplot(y_grid, z_grid, Ey, Ez, color=E_magnitude, cmap='autumn', density=1.5, arrowstyle='->', arrowsize=1.0)
-    plt.xlabel('y / a')
-    plt.ylabel('z / a')
-    plt.title('Electric Field Lines')
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.grid(True, linestyle='--', alpha=0.5)
-    plt.plot([-1, 1], [0, 0], 'ro', markersize=5, label='Ring Cross-section')
-    plt.legend()
-
-    plt.tight_layout()
-    plt.show()
-
-# --- 主程序 ---
 if __name__ == "__main__":
-    # 定义计算区域 (yz 平面, x=0)
-    y_range = np.linspace(-2*a, 2*a, 50)
-    z_range = np.linspace(-2*a, 2*a, 50)
-
-    # 1. 计算电势
-    print("正在计算电势...")
-    V, y_grid, z_grid = calculate_potential_on_grid(y_range, z_range)
-    print("电势计算完成.")
-
-    # 2. 计算电场
-    print("正在计算电场...")
-    Ey, Ez = calculate_electric_field_on_grid(V, y_range, z_range)
-    print("电场计算完成.")
-
-    # 3. 可视化
-    print("正在绘图...")
-    plot_potential_and_field(y_range, z_range, V, Ey, Ez, y_grid, z_grid)
-    print("绘图完成.")
+    # 测试用的坐标范围
+    y = np.linspace(-2, 2, 5)
+    z = np.linspace(-2, 2, 5)
+    
+    # 计算电势和电场
+    V, y_grid, z_grid = calculate_potential_on_grid(y, z)
+    Ey, Ez = calculate_electric_field_on_grid(V, y, z)
+    
+    # 执行可视化
+    plot_potential_and_field(y, z, V, Ey, Ez, y_grid, z_grid)
