@@ -60,11 +60,12 @@ def transformed_integrand_gamma(z, a):
     """
     计算变换后的被积函数 g(z, a) = f(x(z), a) * dx/dz
     """
-    c = a - 1.0
-    if c <= 0:
-        if a <= 1:  # 增加一个检查
+    if a <= 1:  # 增加一个检查
             print(f"警告: transformed_integrand_gamma 假定 a > 1，但接收到 a={a}")
             return np.nan
+    c = a - 1.0
+    if c <= 0:
+        
         return 0.0
     if z < 0 or z > 1:
         return 0.0
