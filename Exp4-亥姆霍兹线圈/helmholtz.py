@@ -19,8 +19,8 @@ def Helmholtz_coils(r_low, r_up, d, for_plot=True):
         d (float): 两线圈中心之间的距离 (m)
         for_plot (bool): 是否为绘图返回数据，默认为True
     返回:
-        Y_plot (np.ndarray): 用于绘图的 Y 坐标网格 
-        Z_plot (np.ndarray): 用于绘图的 Z 坐标网格 
+        Y_plot (np.ndarray): 用于绘图的 Y 坐标网格
+        Z_plot (np.ndarray): 用于绘图的 Z 坐标网格
         By (np.ndarray): y方向的磁场分量 (T)
         Bz (np.ndarray): z方向的磁场分量 (T)
     '''
@@ -29,8 +29,8 @@ def Helmholtz_coils(r_low, r_up, d, for_plot=True):
     # 1. 定义积分角度 phi 和空间网格 y, z
     phi_angles = np.linspace(0, 2 * np.pi, 20)  # 例如20个角度点
     max_r = max(r_low, r_up)
-    y_coords = np.linspace(-2 * max_r, 2 * max_r, 25)  # y坐标范围和点数
-    z_coords = np.linspace(-1.5 * d, 1.5 * d, 25)  # z坐标范围和点数 (调整范围以更好显示)
+    y_coords = np.linspace(-2 * max_r, 2 * max_r, 25,20)  # y坐标范围和点数
+    z_coords = np.linspace(-1.5 * d, 1.5 * d, 25,20)  # z坐标范围和点数 (调整范围以更好显示)
 
     # 2. 创建三维网格 Y, Z, Phi (用于后续计算)
     Y, Z, Phi = np.meshgrid(y_coords, z_coords, phi_angles)
@@ -132,4 +132,3 @@ if __name__ == "__main__":
     # print("\nTesting with different parameters (e.g., non-Helmholtz):")
     # plot_magnetic_field_streamplot(0.5, 0.5, 0.8)
     # plot_magnetic_field_streamplot(0.3, 0.7, 0.6)
-
