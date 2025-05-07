@@ -64,12 +64,14 @@ def transformed_integrand_gamma(z, a):
         return 0.0
     if z == 1:
         return 0.0
-
+    if z == 0:
+        return integrand_gamma(0, a) * c
     c = a - 1.0
     if c <= 0:
         if a <= 1:  # 增加一个检查
             print(f"警告: transformed_integrand_gamma 假定 a > 1，但接收到 a={a}")
             return np.nan
+        return 0.0
 
 
     x = c * z / (1 - z)
@@ -77,10 +79,9 @@ def transformed_integrand_gamma(z, a):
     val_f = integrand_gamma(x, a)
     result = val_f * dxdz
 
-    if not np.isfinite(result):
+    if not np.isfinite(val_f) or not np.isfinite(dxdz):
         return 0.0
     return result
-
 
 def gamma_function(a):
     """
