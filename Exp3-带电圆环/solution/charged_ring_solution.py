@@ -24,9 +24,12 @@ def calculate_potential_on_grid(y_coords, z_coords):
     print("开始计算电势...")
     
     # 1. 创建 y, z, phi 网格 (使用 np.mgrid)
-    z_grid, y_grid, phi_grid = np.mgrid[z_coords.min():z_coords.max():complex(0, len(z_coords)),
-                                        y_coords.min():y_coords.max():complex(0, len(y_coords)),
-                                        0:2*np.pi:100j]
+    # 确保网格创建正确，维度顺序为 (z, y, phi)
+    z_grid, y_grid, phi_grid = np.mgrid[
+        z_coords.min():z_coords.max():complex(0, len(z_coords)),
+        y_coords.min():y_coords.max():complex(0, len(y_coords)),
+        0:2*np.pi:100j
+    ]
     
     # 2. 计算场点到圆环上各点的距离 R
     R = np.sqrt((a * np.cos(phi_grid))**2 + (y_grid - a * np.sin(phi_grid))**2 + z_grid**2)
@@ -38,11 +41,14 @@ def calculate_potential_on_grid(y_coords, z_coords):
     dV = C / R
     
     # 5. 对 phi 进行积分 (使用 np.trapz)
-    V = np.trapz(dV, dx=phi_grid[0,0,1]-phi_grid[0,0,0], axis=-1)
+    # 计算 phi 的步长
+    phi_step = phi_grid[0, 0, 1] - phi_grid[0, 0, 0]
+    V = np.trapz(dV, dx=phi_step, axis=-1)
     
     print("电势计算完成.")
     # 6. 返回计算得到的电势 V 和对应的 y_grid, z_grid (取一个切片)
-    return V, y_grid[:, :, 0], z_grid[:, :, 0]
+    # 确保返回的 y_grid 和 z_grid 是二维数组
+    return V, y_grid[:, :, 0].copy(), z_grid[:, :, 0].copy()
 
 def calculate_electric_field_on_grid(V, y_coords, z_coords):
     """
