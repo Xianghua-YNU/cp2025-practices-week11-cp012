@@ -47,6 +47,7 @@ def calculate_potential_on_grid(y_coords, z_coords):
             # 积分计算电势
             V[i, j] = np.trapz(C / R, phi)
 
+    # 确保返回三个值
     return V, Y, Z
 
 def calculate_electric_field_on_grid(V, y_coords, z_coords):
