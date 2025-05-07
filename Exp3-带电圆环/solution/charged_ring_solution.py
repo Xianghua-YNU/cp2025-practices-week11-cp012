@@ -1,105 +1,46 @@
-mport numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 
 # --- 常量定义 ---
 a = 1.0  # 圆环半径 (m)
 q = 1.0  # q 参数 (对应电荷 Q = 4*pi*eps0*q)
-# V(x,y,z) = q/(2*pi) * integral(...)
-# 这里 C 对应 q/(2*pi)
-C = q / (2 * np.pi)
+C = q / (2 * np.pi)  # 积分常数
 
 # --- 计算函数 ---
-def test_potential_calculation():
-    """测试电势计算函数"""
-    y_coords = np.linspace(-2, 2, 5)
-    z_coords = np.linspace(-2, 2, 5)
-    result = calculate_potential_on_grid(y_coords, z_coords)
-    assert result is not None, "函数返回值为None，请检查返回值！"
-    V, y_grid, z_grid = result
-    # 后续断言...
-def calculate_potential_on_grid(y_coords, z_coords):
-    # 生成网格坐标
-    y_grid, z_grid = np.meshgrid(y_coords, z_coords)
-    
-    # 计算电势（此处为示例逻辑，需替换为实际计算）
-    V = compute_potential(y_grid, z_grid)  # 替换为实际电势计算函数
-    
-    return V, y_grid, z_grid  # 确保返回三个变量
 
 def calculate_potential_on_grid(y_coords, z_coords):
     """
     在 yz 平面 (x=0) 的网格上计算电势 V(0, y, z)。
     使用 numpy 的向量化和 trapz 进行数值积分。
-
-    参数:
-        y_coords (np.ndarray): y 坐标数组
-        z_coords (np.ndarray): z 坐标数组
-
-    返回:
-        V (np.ndarray): 在 (y, z) 网格上的电势值
     """
-    # 创建 y, z, phi 网格
-    # 注意：mgrid 的索引顺序是 'ij' (笛卡尔) 还是 'xy' (矩阵)
-    # 这里 z 是第一个维度，y 是第二个维度
-    z_grid, y_grid, phi_grid = np.mgrid[z_coords.min():z_coords.max():complex(0, len(z_coords)),
-                                        y_coords.min():y_coords.max():complex(0, len(y_coords)),
-                                        0:2*np.pi:100j] # phi 方向积分点数增加到100
+    # 创建 y, z, phi 网格，增加积分点数以提高精度
+    z_grid, y_grid, phi_grid = np.mgrid[
+        z_coords.min():z_coords.max():complex(0, len(z_coords)),
+        y_coords.min():y_coords.max():complex(0, len(y_coords)),
+        0:2*np.pi:1000j  # 增加积分点数到1000以提升精度
+    ]
 
-    # 计算到圆环上各点的距离 R
-    # 圆环在 xy 平面，方程 x=a*cos(phi), y=a*sin(phi), z=0
-    # 场点 P = (0, y, z)
-    # 环上点 Q = (a*cos(phi), a*sin(phi), 0)
-    # R = |P - Q| = sqrt( (0 - a*cos(phi))^2 + (y - a*sin(phi))^2 + (z - 0)^2 )
+    # 计算距离 R
     R = np.sqrt((a * np.cos(phi_grid))**2 + (y_grid - a * np.sin(phi_grid))**2 + z_grid**2)
+    R[R < 1e-10] = 1e-10  # 避免除零错误
 
-    # 处理 R=0 的情况（虽然在 yz 平面且 z!=0 或 y!=a 时不会发生）
-    R[R < 1e-10] = 1e-10 # 避免除零错误
-
-    # 计算电势微元 dV
+    # 计算电势并积分
     dV = C / R
-
-    # 对 phi 进行积分 (使用梯形法则)
-    # np.trapezoid 默认沿最后一个轴积分
     V = np.trapezoid(dV, dx=phi_grid[0,0,1]-phi_grid[0,0,0], axis=-1)
-    return V, y_grid[:,:,0], z_grid[:,:,0] # 返回 V 和对应的 y, z 网格
-    
-def calculate_potential_on_grid(y_coords, z_coords):
-    try:
-        y_grid, z_grid = np.meshgrid(y_coords, z_coords)
-        V = compute_potential(y_grid, z_grid)
-        return V, y_grid, z_grid
-    except Exception as e:
-        print(f"计算电势时发生错误: {e}")
-        raise  # 重新抛出异常以便测试捕获
-        
+    return V, y_grid[:,:,0], z_grid[:,:,0]
+
 def calculate_electric_field_on_grid(V, y_coords, z_coords):
     """
     根据电势 V 计算 yz 平面上的电场 E = -∇V。
-    使用 np.gradient 进行数值微分。
-
-    参数:
-        V (np.ndarray): 电势网格 (z 维度优先)
-        y_coords (np.ndarray): y 坐标数组
-        z_coords (np.ndarray): z 坐标数组
-
-    返回:
-        Ey (np.ndarray): 电场的 y 分量
-        Ez (np.ndarray): 电场的 z 分量
+    使用中心差分法以提高数值微分精度。
     """
-    dz = z_coords[1] - z_coords[0]
     dy = y_coords[1] - y_coords[0]
-
-    # 计算梯度，注意 V 的维度顺序是 (z, y)
-    # gradient 返回值顺序与 V 的维度顺序一致: (dV/dz, dV/dy)
+    dz = z_coords[1] - z_coords[0]
+    
+    # 计算梯度，注意V的维度顺序为(z, y)
     grad_z, grad_y = np.gradient(-V, dz, dy)
-
-    # E = -∇V，所以 Ez = -dV/dz, Ey = -dV/dy
-    Ez = grad_z
-    Ey = grad_y
-    return Ey, Ez
-
+    return grad_y, grad_z  # Ey = -∂V/∂y, Ez = -∂V/∂z
 # --- 可视化函数 ---
-
 def plot_potential_and_field(y_coords, z_coords, V, Ey, Ez, y_grid, z_grid):
     """
     绘制 yz 平面上的等势线和电场线。
