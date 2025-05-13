@@ -1,4 +1,9 @@
+import numpy as np
+import matplotlib.pyplot as plt
 
+# --- 物理和线圈参数 ---
+MU0 = 4 * np.pi * 1e-7  # 真空磁导率 (T*m/A)
+I = 1.0  # 电流 (A) - 假设为1A，实际计算中常数因子可以合并
 def plot_magnetic_field_streamplot(r_coil_1, r_coil_2, d_coils):
     """
     调用 Helmholtz_coils 计算磁场，并使用流线图可视化。
