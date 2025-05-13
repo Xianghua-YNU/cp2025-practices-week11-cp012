@@ -4,6 +4,66 @@ import matplotlib.pyplot as plt
 # --- 物理和线圈参数 ---
 MU0 = 4 * np.pi * 1e-7  # 真空磁导率 (T*m/A)
 I = 1.0  # 电流 (A) - 假设为1A，实际计算中常数因子可以合并
+
+
+def Helmholtz_coils(r_low, r_up, d):
+    '''
+    计算亥姆霍兹线圈（或两个不同半径线圈）的磁场。
+    线圈平行于xy平面，圆心在z轴。
+    下方线圈半径 r_low，位于 z = -d/2。
+    上方线圈半径 r_up，位于 z = +d/2。
+
+    输入:
+        r_low (float): 下方线圈的半径 (m)
+        r_up (float): 上方线圈的半径 (m)
+        d (float): 两线圈中心之间的距离 (m)
+    返回:
+        Y_plot (np.ndarray): 用于绘图的 Y 坐标网格
+        Z_plot (np.ndarray): 用于绘图的 Z 坐标网格
+        By (np.ndarray): y方向的磁场分量 (T)
+        Bz (np.ndarray): z方向的磁场分量 (T)
+    '''
+    print(f"开始计算磁场: r_low={r_low}, r_up={r_up}, d={d}")
+
+    # 1. 定义积分角度 phi 和空间网格 y, z
+    phi_angles = np.linspace(0, 2 * np.pi, 20)  # 例如20个角度点
+    max_r = max(r_low, r_up)
+    y_coords = np.linspace(-2 * max_r, 2 * max_r, 25)  # y坐标范围和点数
+    z_coords = np.linspace(-1.5 * d, 1.5 * d, 25)  # z坐标范围和点数 (调整范围以更好显示)
+
+    # 2. 创建三维网格 Y, Z, Phi (用于后续计算)
+    Y, Z, Phi = np.meshgrid(y_coords, z_coords, phi_angles)
+
+    # 3. 计算到下方线圈 (r_low, 中心在 z=-d/2) 上各电流元的距离 dist1
+    dist1_sq = (r_low * np.cos(Phi)) ** 2 + (Y - r_low * np.sin(Phi)) ** 2 + (Z - (-d / 2)) ** 2
+    dist1 = np.sqrt(dist1_sq)
+    dist1[dist1 < 1e-9] = 1e-9  # 避免除零
+
+    # 4. 计算到上方线圈 (r_up, 中心在 z=+d/2) 上各电流元的距离 dist2
+    dist2_sq = (r_up * np.cos(Phi)) ** 2 + (Y - r_up * np.sin(Phi)) ** 2 + (Z - (d / 2)) ** 2
+    dist2 = np.sqrt(dist2_sq)
+    dist2[dist2 < 1e-9] = 1e-9
+
+    # 5. 计算磁场贡献的被积函数 dBy_integrand 和 dBz_integrand
+    dBy_integrand = r_low * (Z - (-d / 2)) * np.sin(Phi) / dist1 ** 3 + \
+                    r_up * (Z - (d / 2)) * np.sin(Phi) / dist2 ** 3
+    dBz_integrand = r_low * (r_low - Y * np.sin(Phi)) / dist1 ** 3 + \
+                    r_up * (r_up - Y * np.sin(Phi)) / dist2 ** 3
+
+    # 6. 对 phi_angles 进行数值积分 (例如使用 np.trapezoid)
+    delta_phi = phi_angles[1] - phi_angles[0]  # 如果trapz的dx参数需要
+    By_unscaled = np.trapezoid(dBy_integrand, x=phi_angles, axis=-1)  # 或 dx=delta_phi
+    Bz_unscaled = np.trapezoid(dBz_integrand, x=phi_angles, axis=-1)  # 或 dx=delta_phi
+
+    # 7. 引入物理常数因子得到真实的磁场值 (单位 T)
+    scaling_factor = (MU0 * I) / (4 * np.pi)
+    By = scaling_factor * By_unscaled
+    Bz = scaling_factor * Bz_unscaled
+
+    print("磁场计算完成.")
+    return Y, Z, By, Bz
+
+
 def plot_magnetic_field_streamplot(r_coil_1, r_coil_2, d_coils):
     """
     调用 Helmholtz_coils 计算磁场，并使用流线图可视化。
@@ -35,9 +95,9 @@ def plot_magnetic_field_streamplot(r_coil_1, r_coil_2, d_coils):
 
     # 4. 绘制线圈的截面位置 (用于参考)
     # 下方线圈 (r_coil_1, z=-d_coils/2)
-    plt.plot([-r_coil_1, -r_coil_1], [-d_coils / 2 - 0.02, -d_coils / 2 + 0.02], 'b-', linewidth=3)  # 左边缘
-    plt.plot([r_coil_1, r_coil_1], [-d_coils / 2 - 0.02, -d_coils / 2 + 0.02], 'b-', linewidth=3)  # 右边缘
-    plt.text(0, -d_coils / 2 - 0.1 * max(r_coil_1, r_coil_2, d_coils), f'Coil 1 (R={r_coil_1})', color='blue',
+    plt.plot([-r_coil_1, -r_coil_2], [-d_coils / 2 - 0.02, -d_coils / 2 + 0.02], 'b-', linewidth=3)  # 左边缘
+    plt.plot([r_coil_1, r_coil_2], [-d_coils / 2 - 0.02, -d_coils / 2 + 0.02], 'b-', linewidth=3)  # 右边缘
+    plt.text(0, -d_coils / 2 - 0.1 * max(r_coil_1, r_coil_2, d_coils), f'Coil 1 (R={r_coil_2})', color='blue',
              ha='center')
     # 上方线圈 (r_coil_2, z=+d_coils/2)
     plt.plot([-r_coil_2, -r_coil_2], [d_coils / 2 - 0.02, d_coils / 2 + 0.02], 'r-', linewidth=3)
@@ -57,7 +117,6 @@ def plot_magnetic_field_streamplot(r_coil_1, r_coil_2, d_coils):
     print("绘图完成.")
 
 
-# --- 主程序 ---
 if __name__ == "__main__":
     # 定义线圈参数 - 学生可以修改这些值进行测试
     # 标准亥姆霍兹线圈: r1 = r2 = R, d = R
@@ -67,8 +126,3 @@ if __name__ == "__main__":
 
     # 调用绘图函数，该函数内部会调用计算函数
     plot_magnetic_field_streamplot(radius_1, radius_2, distance_between_coils)
-
-    # 额外的测试用例 (可选)
-    # print("\nTesting with different parameters (e.g., non-Helmholtz):")
-    # plot_magnetic_field_streamplot(0.5, 0.5, 0.8)
-    # plot_magnetic_field_streamplot(0.3, 0.7, 0.6)
